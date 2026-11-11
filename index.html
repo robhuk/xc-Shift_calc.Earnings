@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#A50034">
+<meta name="description" content="CrossCountry-style shift earnings calculator">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<title>XC Shift Earnings</title>
+<style>
+:root{--red:#A50034;--pink:#ED1B59;--gold:#F5C542;--ink:#20232a;--muted:#68717d;--bg:#f2f3f5;--line:#e2e5e9;--green:#147a45}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 system-ui,-apple-system,Segoe UI,sans-serif;padding-bottom:calc(24px + env(safe-area-inset-bottom))}
+header{background:var(--red);color:white;padding:calc(17px + env(safe-area-inset-top)) 18px 18px;box-shadow:0 3px 10px #0002}
+.brand{display:flex;align-items:center;gap:12px}.brand img{width:44px;height:44px}.brand h1{font-size:21px;line-height:1.1;margin:0}.brand small{display:block;opacity:.85;font-size:12px;margin-top:4px}
+main{max-width:720px;margin:auto;padding:14px}
+.card{background:white;border-radius:16px;padding:17px;margin:0 0 13px;box-shadow:0 2px 8px #17202b0c}
+h2{font-size:16px;margin:0 0 13px;color:var(--red)}.grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}.field{min-width:0}.field.full{grid-column:1/-1}
+label{display:block;font-size:13px;font-weight:650;margin-bottom:6px;color:#444c56}
+input,select{width:100%;min-height:45px;border:1px solid #cfd4da;border-radius:10px;padding:10px 11px;font:inherit;background:#fff;color:var(--ink)}
+input:focus,select:focus{outline:2px solid #ed1b5940;border-color:var(--pink)}
+.hint{font-size:12px;color:var(--muted);margin-top:5px}
+.segment{display:flex;background:#f0f1f3;border-radius:11px;padding:4px;gap:4px}.segment button{flex:1;border:0;border-radius:8px;padding:10px 6px;background:transparent;font-weight:700;color:#555}.segment button.active{background:var(--red);color:white}
+.subtle{color:var(--muted);font-size:12px}.rowline{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}.rowline:last-child{border:0}
+.money{font-variant-numeric:tabular-nums;font-weight:700}.total{background:#fff7e0;border:1px solid #f1d78c;border-radius:14px;padding:17px;margin-top:12px}.total .amount{font-size:34px;font-weight:850;color:var(--red);letter-spacing:-1px}
+.actions{display:flex;gap:9px;margin:12px 0}.actions button{flex:1;border:0;border-radius:11px;padding:13px 10px;font:700 14px system-ui;cursor:pointer}.primary{background:var(--gold);color:#251d00}.secondary{background:#eceef1;color:#303640}
+details summary{font-weight:700;color:var(--red);cursor:pointer}details .grid{margin-top:14px}
+.note{font-size:12px;color:var(--muted);margin-top:9px}
+@media(max-width:420px){.grid{gap:9px}.card{padding:15px}.total .amount{font-size:30px}}
+
+
+.modal-backdrop{display:none;position:fixed;inset:0;z-index:1000;background:#111a;align-items:center;justify-content:center;padding:18px;padding-top:calc(18px + env(safe-area-inset-top));padding-bottom:calc(18px + env(safe-area-inset-bottom))}
+.modal-backdrop.open{display:flex}
+.modal-panel{width:100%;max-width:480px;max-height:90dvh;overflow:auto;background:#fff;border-radius:18px;padding:19px;box-shadow:0 18px 60px #0005}
+.modal-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.modal-head h2{margin:0 0 12px}
+.modal-close{border:0;background:#f0f1f3;border-radius:50%;width:36px;height:36px;font-size:18px;cursor:pointer;flex:0 0 auto}
+body.modal-open{overflow:hidden}
+</style>
+</head>
+<body>
+<header><div class="brand"><img src="icon.svg" alt=""><div><h1>XC Shift Earnings</h1><small>Shift pay • Delay • Scans • Commission</small></div></div></header>
+<main>
+<section class="card">
+<h2>🚆 Shift details</h2>
+<div class="field full"><label>Payment type</label><div class="segment"><button type="button" id="ordinary" class="active">Ordinary</button><button type="button" id="sunday">Sunday</button></div></div>
+<div style="height:13px"></div>
+<div class="field full"><label>How would you like to enter the shift?</label><div class="segment"><button type="button" id="timesMode" class="active">Start & finish</button><button type="button" id="lengthMode">Length</button></div></div>
+<div id="timesFields" class="grid" style="margin-top:13px">
+<div class="field"><label for="start">Start time</label><input id="start" type="time" value="08:00"></div>
+<div class="field"><label for="finish">Finish time</label><input id="finish" type="time" value="16:00"></div>
+</div>
+<div id="lengthFields" class="grid" style="display:none;margin-top:13px">
+<div class="field"><label for="hours">Hours</label><input id="hours" type="number" min="0" step="1" placeholder="8"></div>
+<div class="field"><label for="minutes">Minutes</label><input id="minutes" type="number" min="0" max="59" step="1" placeholder="0"></div>
+</div>
+<div class="hint" id="durationHint">Calculated shift length: 8 hours 00 minutes</div>
+</section>
+
+<section class="card">
+<h2>💷 Additional earnings</h2>
+<div class="grid">
+<div class="field"><label for="delay">Delay payment (minutes)</label><input id="delay" type="number" min="0" step="1" value="0"></div>
+<div class="field"><label for="scans">Number of scans</label><input id="scans" type="number" min="0" step="1" value="0"></div>
+<div class="field"><label for="sales">Ticket sales (£)</label><input id="sales" type="number" min="0" step="0.01" placeholder="0.00"></div>
+<div class="field"><label for="commission">Commission (£)</label><input id="commission" type="number" min="0" step="0.01" placeholder="Auto-calculated" ></div>
+</div>
+<div class="note">Enter ticket sales to calculate commission at the configured percentage, or enter a commission amount manually. A manual amount takes priority.</div>
+</section>
+
+<section class="card">
+<h2>📊 Earnings breakdown</h2>
+<div class="rowline"><span>Shift duration</span><span class="money" id="durationOut">8h 00m</span></div>
+<div class="rowline"><span>Basic shift payment</span><span class="money" id="basicOut">£180.96</span></div>
+<div class="rowline"><span>Delay payment</span><span class="money" id="delayOut">£0.00</span></div>
+<div class="rowline"><span>Scan payment</span><span class="money" id="scanOut">£0.00</span></div>
+<div class="rowline"><span>Ticket commission</span><span class="money" id="commissionOut">£0.00</span></div>
+<div class="rowline"><strong>Additional earnings subtotal</strong><strong class="money" id="additionalOut">£0.00</strong></div>
+<div class="total"><div class="subtle">TOTAL SHIFT EARNINGS</div><div class="amount" id="totalOut">£180.96</div><div class="subtle" id="rateOut">Ordinary rate: £22.62 per hour</div></div>
+<div class="actions"><button class="primary" id="copy">🗒️ Copy breakdown</button><button class="secondary" id="reset">↻ Reset</button></div>
+</section>
+
+<section class="card" style="text-align:center">
+<h2>⚙️ Payment settings</h2>
+<p class="subtle" style="margin:-5px 0 12px">Your current rates are saved on this device.</p>
+<button type="button" class="primary" id="openRates" style="width:100%;border:0;border-radius:11px;padding:13px 10px;font:700 15px system-ui;cursor:pointer">⚙️ Edit rates & payment amounts</button>
+</section>
+
+<div class="modal-backdrop" id="ratesModal" aria-hidden="true">
+<div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="ratesTitle">
+<div class="modal-head">
+<h2 id="ratesTitle">⚙️ Edit rates & payment amounts</h2>
+<button type="button" class="modal-close" id="closeRates" aria-label="Close">✕</button>
+</div>
+<p class="subtle" style="margin:0 0 14px">Update your hourly rates, scan payment and ticket commission.</p>
+<div class="grid">
+<div class="field"><label for="ordinaryRate">Ordinary hourly rate (£)</label><input id="ordinaryRate" type="number" min="0" step="0.01" value="22.62"></div>
+<div class="field"><label for="sundayRate">Sunday hourly rate (£)</label><input id="sundayRate" type="number" min="0" step="0.01" value="40.70"></div>
+<div class="field"><label for="scanRate">Payment per scan (£)</label><input id="scanRate" type="number" min="0" step="0.001" value="0.02"></div>
+<div class="field"><label for="commissionRate">Commission rate (%)</label><input id="commissionRate" type="number" min="0" step="0.1" value="6"></div>
+</div>
+<p class="note">Changes are saved on this device and applied automatically to your calculations.</p>
+<button type="button" class="primary" id="saveRates" style="width:100%;border:0;border-radius:11px;padding:13px;margin-top:14px;font:700 15px system-ui;cursor:pointer">Save payment settings</button>
+</div>
+</div>
+<p class="note" style="text-align:center">XC Shift Earnings • Estimates only • Check your payslip for actual payments.</p>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+let payType='ordinary',mode='times';
+const money=n=>'£'+(Number.isFinite(n)?n:0).toFixed(2);
+const num=id=>Math.max(0,Number($(id).value)||0);
+function setType(t){payType=t;$('ordinary').classList.toggle('active',t==='ordinary');$('sunday').classList.toggle('active',t==='sunday');calculate()}
+function setMode(m){mode=m;$('timesMode').classList.toggle('active',m==='times');$('lengthMode').classList.toggle('active',m==='length');$('timesFields').style.display=m==='times'?'grid':'none';$('lengthFields').style.display=m==='length'?'grid':'none';calculate()}
+function getDuration(){
+ if(mode==='length') return num('hours')*60+Math.min(59,num('minutes'));
+ const s=$('start').value,f=$('finish').value;if(!s||!f)return 0;
+ const [sh,sm]=s.split(':').map(Number),[fh,fm]=f.split(':').map(Number);
+ let d=(fh*60+fm)-(sh*60+sm);if(d<0)d+=1440;return d;
+}
+function calculate(){
+ const mins=getDuration(),hrs=mins/60,rate=num(payType==='ordinary'?'ordinaryRate':'sundayRate');
+ const basic=hrs*rate,delay=(num('delay')/60)*rate,scan=num('scans')*num('scanRate');
+ const manual=$('commission').value.trim(),commission=manual!==''?num('commission'):num('sales')*(num('commissionRate')/100);
+ const additional=delay+scan+commission,total=basic+additional;
+ const h=Math.floor(mins/60),m=mins%60;
+ $('durationHint').textContent='Calculated shift length: '+h+' hours '+String(m).padStart(2,'0')+' minutes';
+ $('durationOut').textContent=h+'h '+String(m).padStart(2,'0')+'m';
+ $('basicOut').textContent=money(basic);$('delayOut').textContent=money(delay);$('scanOut').textContent=money(scan);$('commissionOut').textContent=money(commission);$('additionalOut').textContent=money(additional);$('totalOut').textContent=money(total);
+ $('rateOut').textContent=(payType==='ordinary'?'Ordinary':'Sunday')+' rate: '+money(rate)+' per hour';
+ window.breakdown={mins,h,m,rate,basic,delay,scan,commission,additional,total,payType};
+}
+['start','finish','hours','minutes','delay','scans','sales','commission','ordinaryRate','sundayRate','scanRate','commissionRate'].forEach(id=>$(id).addEventListener('input',calculate));
+$('ordinary').onclick=()=>setType('ordinary');$('sunday').onclick=()=>setType('sunday');$('timesMode').onclick=()=>setMode('times');$('lengthMode').onclick=()=>setMode('length');
+$('copy').onclick=()=>{const b=window.breakdown;const txt=`XC SHIFT EARNINGS\nPayment: ${b.payType}\nDuration: ${b.h}h ${String(b.m).padStart(2,'0')}m\nBasic shift pay: ${money(b.basic)}\nDelay pay: ${money(b.delay)}\nScan payment: ${money(b.scan)}\nTicket commission: ${money(b.commission)}\nAdditional earnings: ${money(b.additional)}\nTOTAL: ${money(b.total)}`;navigator.clipboard?.writeText(txt).then(()=>$('copy').textContent='✓ Copied').catch(()=>alert(txt));};
+$('reset').onclick=()=>{['delay','scans','sales','commission'].forEach(id=>$(id).value=id==='delay'||id==='scans'?'0':'');$('start').value='08:00';$('finish').value='16:00';$('hours').value='';$('minutes').value='';setType('ordinary');setMode('times');$('copy').textContent='🗒️ Copy breakdown';calculate()};
+['ordinaryRate','sundayRate','scanRate','commissionRate'].forEach(id=>{const key='xcse-'+id;const saved=localStorage.getItem(key);if(saved!==null)$(id).value=saved;$(id).addEventListener('change',()=>localStorage.setItem(key,$(id).value))});
+calculate();
+
+
+function openRatesModal(){ $('ratesModal').classList.add('open');$('ratesModal').setAttribute('aria-hidden','false');document.body.classList.add('modal-open');$('ordinaryRate').focus(); }
+function closeRatesModal(){ $('ratesModal').classList.remove('open');$('ratesModal').setAttribute('aria-hidden','true');document.body.classList.remove('modal-open'); }
+$('openRates').addEventListener('click',openRatesModal);
+$('closeRates').addEventListener('click',closeRatesModal);
+$('saveRates').addEventListener('click',()=>{['ordinaryRate','sundayRate','scanRate','commissionRate'].forEach(id=>localStorage.setItem('xcse-'+id,$(id).value));calculate();closeRatesModal();});
+$('ratesModal').addEventListener('click',e=>{if(e.target===$('ratesModal'))closeRatesModal();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape' && $('ratesModal').classList.contains('open'))closeRatesModal();});
+
+if('serviceWorker' in navigator && location.protocol!=='file:'){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}))}
+</script>
+</body></html>
