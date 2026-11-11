@@ -47,12 +47,12 @@ body.modal-open{overflow:hidden}
 <div style="height:13px"></div>
 <div class="field full"><label>How would you like to enter the shift?</label><div class="segment"><button type="button" id="timesMode" class="active">Start & finish</button><button type="button" id="lengthMode">Length</button></div></div>
 <div id="timesFields" class="grid" style="margin-top:13px">
-<div class="field"><label for="start">Start time</label><input id="start" type="time" value="08:00"></div>
-<div class="field"><label for="finish">Finish time</label><input id="finish" type="time" value="16:00"></div>
+<div class="field"><label for="start">Start time</label><input id="start" type="time" inputmode="numeric" value="08:00"></div>
+<div class="field"><label for="finish">Finish time</label><input id="finish" type="time" inputmode="numeric" value="16:00"></div>
 </div>
 <div id="lengthFields" class="grid" style="display:none;margin-top:13px">
-<div class="field"><label for="hours">Hours</label><input id="hours" type="number" min="0" step="1" placeholder="8"></div>
-<div class="field"><label for="minutes">Minutes</label><input id="minutes" type="number" min="0" max="59" step="1" placeholder="0"></div>
+<div class="field"><label for="hours">Hours</label><input id="hours" type="number" min="0" step="1" placeholder="8" inputmode="decimal"></div>
+<div class="field"><label for="minutes">Minutes</label><input id="minutes" type="number" min="0" max="59" step="1" placeholder="0" inputmode="decimal"></div>
 </div>
 <div class="hint" id="durationHint">Calculated shift length: 8 hours 00 minutes</div>
 </section>
@@ -60,10 +60,10 @@ body.modal-open{overflow:hidden}
 <section class="card">
 <h2>💷 Additional earnings</h2>
 <div class="grid">
-<div class="field"><label for="delay">Delay payment (minutes)</label><input id="delay" type="number" min="0" step="1" value="0"></div>
-<div class="field"><label for="scans">Number of scans</label><input id="scans" type="number" min="0" step="1" value="0"></div>
-<div class="field"><label for="sales">Ticket sales (£)</label><input id="sales" type="number" min="0" step="0.01" placeholder="0.00"></div>
-<div class="field"><label for="commission">Commission (£)</label><input id="commission" type="number" min="0" step="0.01" placeholder="Auto-calculated" ></div>
+<div class="field"><label for="delay">Delay payment (minutes)</label><input id="delay" type="number" min="0" step="1" value="0" inputmode="decimal"></div>
+<div class="field"><label for="scans">Number of scans</label><input id="scans" type="number" min="0" step="1" value="0" inputmode="decimal"></div>
+<div class="field"><label for="sales">Ticket sales (£)</label><input id="sales" type="number" min="0" step="0.01" placeholder="0.00" inputmode="decimal"></div>
+
 </div>
 <div class="note">Enter ticket sales to calculate commission at the configured percentage, or enter a commission amount manually. A manual amount takes priority.</div>
 </section>
@@ -94,10 +94,10 @@ body.modal-open{overflow:hidden}
 </div>
 <p class="subtle" style="margin:0 0 14px">Update your hourly rates, scan payment and ticket commission.</p>
 <div class="grid">
-<div class="field"><label for="ordinaryRate">Ordinary hourly rate (£)</label><input id="ordinaryRate" type="number" min="0" step="0.01" value="22.62"></div>
-<div class="field"><label for="sundayRate">Sunday hourly rate (£)</label><input id="sundayRate" type="number" min="0" step="0.01" value="40.70"></div>
-<div class="field"><label for="scanRate">Payment per scan (£)</label><input id="scanRate" type="number" min="0" step="0.001" value="0.02"></div>
-<div class="field"><label for="commissionRate">Commission rate (%)</label><input id="commissionRate" type="number" min="0" step="0.1" value="6"></div>
+<div class="field"><label for="ordinaryRate">Ordinary hourly rate (£)</label><input id="ordinaryRate" type="number" min="0" step="0.01" value="22.62" inputmode="decimal"></div>
+<div class="field"><label for="sundayRate">Sunday hourly rate (£)</label><input id="sundayRate" type="number" min="0" step="0.01" value="40.70" inputmode="decimal"></div>
+<div class="field"><label for="scanRate">Payment per scan (£)</label><input id="scanRate" type="number" min="0" step="0.001" value="0.02" inputmode="decimal"></div>
+<div class="field"><label for="commissionRate">Commission rate (%)</label><input id="commissionRate" type="number" min="0" step="0.1" value="6" inputmode="decimal"></div>
 </div>
 <p class="note">Changes are saved on this device and applied automatically to your calculations.</p>
 <button type="button" class="primary" id="saveRates" style="width:100%;border:0;border-radius:11px;padding:13px;margin-top:14px;font:700 15px system-ui;cursor:pointer">Save payment settings</button>
@@ -121,7 +121,7 @@ function getDuration(){
 function calculate(){
  const mins=getDuration(),hrs=mins/60,rate=num(payType==='ordinary'?'ordinaryRate':'sundayRate');
  const basic=hrs*rate,delay=(num('delay')/60)*rate,scan=num('scans')*num('scanRate');
- const manual=$('commission').value.trim(),commission=manual!==''?num('commission'):num('sales')*(num('commissionRate')/100);
+ const commission=num('sales')*(num('commissionRate')/100);
  const additional=delay+scan+commission,total=basic+additional;
  const h=Math.floor(mins/60),m=mins%60;
  $('durationHint').textContent='Calculated shift length: '+h+' hours '+String(m).padStart(2,'0')+' minutes';
@@ -130,10 +130,10 @@ function calculate(){
  $('rateOut').textContent=(payType==='ordinary'?'Ordinary':'Sunday')+' rate: '+money(rate)+' per hour';
  window.breakdown={mins,h,m,rate,basic,delay,scan,commission,additional,total,payType};
 }
-['start','finish','hours','minutes','delay','scans','sales','commission','ordinaryRate','sundayRate','scanRate','commissionRate'].forEach(id=>$(id).addEventListener('input',calculate));
+['start','finish','hours','minutes','delay','scans','sales','ordinaryRate','sundayRate','scanRate','commissionRate'].forEach(id=>$(id).addEventListener('input',calculate));
 $('ordinary').onclick=()=>setType('ordinary');$('sunday').onclick=()=>setType('sunday');$('timesMode').onclick=()=>setMode('times');$('lengthMode').onclick=()=>setMode('length');
 $('copy').onclick=()=>{const b=window.breakdown;const txt=`XC SHIFT EARNINGS\nPayment: ${b.payType}\nDuration: ${b.h}h ${String(b.m).padStart(2,'0')}m\nBasic shift pay: ${money(b.basic)}\nDelay pay: ${money(b.delay)}\nScan payment: ${money(b.scan)}\nTicket commission: ${money(b.commission)}\nAdditional earnings: ${money(b.additional)}\nTOTAL: ${money(b.total)}`;navigator.clipboard?.writeText(txt).then(()=>$('copy').textContent='✓ Copied').catch(()=>alert(txt));};
-$('reset').onclick=()=>{['delay','scans','sales','commission'].forEach(id=>$(id).value=id==='delay'||id==='scans'?'0':'');$('start').value='08:00';$('finish').value='16:00';$('hours').value='';$('minutes').value='';setType('ordinary');setMode('times');$('copy').textContent='🗒️ Copy breakdown';calculate()};
+$('reset').onclick=()=>{['delay','scans','sales'].forEach(id=>$(id).value=id==='delay'||id==='scans'?'0':'');$('start').value='08:00';$('finish').value='16:00';$('hours').value='';$('minutes').value='';setType('ordinary');setMode('times');$('copy').textContent='🗒️ Copy breakdown';calculate()};
 ['ordinaryRate','sundayRate','scanRate','commissionRate'].forEach(id=>{const key='xcse-'+id;const saved=localStorage.getItem(key);if(saved!==null)$(id).value=saved;$(id).addEventListener('change',()=>localStorage.setItem(key,$(id).value))});
 calculate();
 
